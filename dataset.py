@@ -54,14 +54,6 @@ class CustomTensorDataset(Dataset):
     def __len__(self):
         return self.data_tensor.size(0)
 
-    def getitem_from_classes(self, factors):
-        idx = 0
-        for c in self.latents_classes:
-            if c == factors:
-                return self.data_tensor[idx]
-            else:
-                idx += 1
-
 
 def return_data(args):
     name = args.dataset
