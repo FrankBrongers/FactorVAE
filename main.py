@@ -38,6 +38,10 @@ if __name__ == "__main__":
     parser.add_argument('--beta1_D', default=0.5, type=float, help='beta1 parameter of the Adam optimizer for the discriminator')
     parser.add_argument('--beta2_D', default=0.9, type=float, help='beta2 parameter of the Adam optimizer for the discriminator')
 
+    parser.add_argument('--subset_size', default=0, type=int, help='size of the subset used for empirical std in the disentanglement score, overwrites subset_fraction')
+    parser.add_argument('--subset_fraction', default=0.1, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
+    parser.add_argument('--sample_size', default=0.1, type=float, help='L used for creating the votes in the disentanglement score')
+
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='CelebA', type=str, help='dataset name')
     parser.add_argument('--image_size', default=64, type=int, help='image size. now only (64,64) is supported')
