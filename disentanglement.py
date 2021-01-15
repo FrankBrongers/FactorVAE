@@ -20,7 +20,7 @@ class disentanglement_score:
         self.max_classes = dataset.latents_classes[-1]
         self.count_classes = len(self.max_classes)
 
-        self.factor_idxs = args.factor_idxs.split(',')
+        self.factor_idxs = [int(i) for i in args.factor_idxs.split(',')]
 
         l = dataset.len()
 
