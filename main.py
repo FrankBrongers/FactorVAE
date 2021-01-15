@@ -43,7 +43,7 @@ if __name__ == "__main__":
     parser.add_argument('--image_size', default=64, type=int, help='image size. now only (64,64) is supported')
     parser.add_argument('--num_workers', default=2, type=int, help='dataloader num_workers')
 
-    parser.add_argument('--viz_on', default=True, type=str2bool, help='enable visdom visualization')
+    parser.add_argument('--viz_on', default=False, type=str2bool, help='enable visdom visualization')
     parser.add_argument('--viz_port', default=8097, type=int, help='visdom port number')
     parser.add_argument('--viz_ll_iter', default=1000, type=int, help='visdom line data logging iter')
     parser.add_argument('--viz_la_iter', default=5000, type=int, help='visdom line data applying iter')

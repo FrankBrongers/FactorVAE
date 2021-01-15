@@ -108,18 +108,19 @@ class Solver(object):
 
                 vae_loss = vae_recon_loss + vae_kld + self.gamma*vae_tc_loss
 
-                self.optim_VAE.zero_grad()
-                vae_loss.backward(retain_graph=True)
-                self.optim_VAE.step()
-
                 x_true2 = x_true2.to(self.device)
                 z_prime = self.VAE(x_true2, no_dec=True)
                 z_pperm = permute_dims(z_prime).detach()
                 D_z_pperm = self.D(z_pperm)
                 D_tc_loss = 0.5*(F.cross_entropy(D_z, zeros) + F.cross_entropy(D_z_pperm, ones))
 
+                self.optim_VAE.zero_grad()
+                vae_loss.backward(retain_graph=True)
+
                 self.optim_D.zero_grad()
                 D_tc_loss.backward()
+
+                self.optim_VAE.step()
                 self.optim_D.step()
 
                 if self.global_iter%self.print_iter == 0:
