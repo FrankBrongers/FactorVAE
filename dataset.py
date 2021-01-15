@@ -34,8 +34,9 @@ class CustomImageFolder(ImageFolder):
 
 
 class CustomTensorDataset(Dataset):
-    def __init__(self, data_tensor, transform=None):
+    def __init__(self, data_tensor, latents_classes, transform=None):
         self.data_tensor = data_tensor
+        self.latents_classes = np.array(latents_classes)
         self.transform = transform
         self.indices = range(len(self))
 
@@ -52,6 +53,14 @@ class CustomTensorDataset(Dataset):
 
     def __len__(self):
         return self.data_tensor.size(0)
+
+    def getitem_from_classes(self, factors):
+        idx = 0
+        for c in self.latents_classes:
+            if c == factors:
+                return self.data_tensor[idx]
+            else:
+                idx += 1
 
 
 def return_data(args):
@@ -77,8 +86,9 @@ def return_data(args):
     elif name.lower() == 'dsprites':
         root = os.path.join(dset_dir, 'dsprites-dataset/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
         data = np.load(root, encoding='latin1')
-        data = torch.from_numpy(data['imgs']).unsqueeze(1).float()
-        train_kwargs = {'data_tensor':data}
+        imgs = torch.from_numpy(data['imgs']).unsqueeze(1).float()
+        latents_classes = list(data['latents_classes'])
+        train_kwargs = {'data_tensor':imgs, 'latents_classes':latents_classes}
         dset = CustomTensorDataset
     else:
         raise NotImplementedError
