@@ -57,7 +57,7 @@ class disentanglement_score:
         return latents
 
     def score(self, model):
-        tally = torch.zeros(max(self.factor_idxs), self.self.z_dim)
+        tally = torch.zeros(max(self.factor_idxs), self.z_dim)
 
         for _ in self.vote_count:
             fixed_factor_index = random.choice(self.factor_idxs)
@@ -65,7 +65,7 @@ class disentanglement_score:
             norm_latents = latents/self.emp_std
             emp_var = self.empirical_variance(norm_latents)
 
-            vote = torch.argmin(input, dim=1)
+            vote = torch.argmin(emp_var)
             tally[fixed_factor_index, vote] += 1
 
         return torch.sum(torch.max(tally, dim=1))/self.vote_count
