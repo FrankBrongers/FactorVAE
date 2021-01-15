@@ -12,12 +12,15 @@ class disentanglement_score:
         self.num_workers = args.num_workers
         self.device = args.device
         self.subset_size = args.subset_size
-        self.sample_size = args.sample_size
+        self.sample_size = args.L
+        self.vote_count = args.vote_count
 
         self.dataset = dataset
         self.classes = dataset.latents_classes
         self.max_classes = dataset.latents_classes[-1]
         self.count_classes = len(self.max_classes)
+
+        self.factor_idxs = args.factor_idxs.split(',')
 
         l = dataset.len()
 
@@ -37,7 +40,7 @@ class disentanglement_score:
 
         self.emp_std = torch.std(latents, dim=1, unbiased=True, keepdim=True)
 
-    def fixed_factor_latents(self, model, fixed_factor_index=1):
+    def fixed_factor_latents(self, model, fixed_factor_index):
         fixed_factor = random.randrange(self.max_classes[fixed_factor_index]+1)
         sample_indices = numpy.random.choice(np.where(self.classes[:, fixed_factor_index] == fixed_factor)[0])
 
@@ -54,13 +57,18 @@ class disentanglement_score:
         return latents
 
     def score(self, model):
-        factors_indices = np.arange(self.count_classes)[1:]
+        tally = torch.zeros(max(self.factor_idxs), self.self.z_dim)
 
-        for idx in factors_indices:
-            latents = fixed_factor_latents(model, idx)
+        for _ in self.vote_count:
+            fixed_factor_index = random.choice(self.factor_idxs)
+            latents = fixed_factor_latents(model)
             norm_latents = latents/self.emp_std
             emp_var = self.empirical_variance(norm_latents)
+
             vote = torch.argmin(input, dim=1)
+            tally[fixed_factor_index, vote] += 1
+
+        return torch.sum(torch.max(tally, dim=1))/self.vote_count
 
     def empirical_variance(self, latents):
         denom = (2*self.sample_size*(self.sample_size-1))

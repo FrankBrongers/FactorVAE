@@ -40,7 +40,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--subset_size', default=0, type=int, help='size of the subset used for empirical std in the disentanglement score, overwrites subset_fraction')
     parser.add_argument('--subset_fraction', default=0.1, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
-    parser.add_argument('--sample_size', default=0.1, type=float, help='L used for creating the votes in the disentanglement score')
+    parser.add_argument('--L', default=100, type=int, help='L used for creating the votes in the disentanglement score')
+    parser.add_argument('--vote_count', default=800, type=float, help='Amount of votes needed for the disentanglement score')
+    parser.add_argument('--factor_idxs', default='1,2,3,4,5', type=int, help='factor indices the disentanglement score seperated by a comma, the first factor of dsprites is always zero and thus left out by default')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='CelebA', type=str, help='dataset name')
