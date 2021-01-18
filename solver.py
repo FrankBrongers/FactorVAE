@@ -13,6 +13,7 @@ from utils import DataGather, mkdirs, grid2gif
 from ops import recon_loss, kl_divergence, permute_dims
 from model import FactorVAE1, FactorVAE2, Discriminator
 from dataset import return_data
+from disentanglement import Disentanglement_score
 
 
 class Solver(object):
@@ -30,7 +31,7 @@ class Solver(object):
         self.dset_dir = args.dset_dir
         self.dataset = args.dataset
         self.batch_size = args.batch_size
-        self.data_loader = return_data(args)
+        self.data_loader, self.dataset = return_data(args)
 
         # Networks & Optimizers
         self.z_dim = args.z_dim
@@ -47,9 +48,11 @@ class Solver(object):
         if args.dataset == 'dsprites':
             self.VAE = FactorVAE1(self.z_dim).to(self.device)
             self.nc = 1
+            self.dis_score = Disentanglement_score(self.VAE.eval(), args, self.dataset, self.device)
         else:
             self.VAE = FactorVAE2(self.z_dim).to(self.device)
             self.nc = 3
+            self.dis_score = None
         self.optim_VAE = optim.Adam(self.VAE.parameters(), lr=self.lr_VAE,
                                     betas=(self.beta1_VAE, self.beta2_VAE))
 
@@ -124,8 +127,14 @@ class Solver(object):
                 self.optim_D.step()
 
                 if self.global_iter%self.print_iter == 0:
-                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} D_tc_loss:{:.3f}'.format(
-                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item()))
+                    if self.dis_score:
+                        score = self.dis_score.score(self.VAE.eval())
+                        self.VAE.train()
+                    else:
+                        score = 0
+
+                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} D_tc_loss:{:.3f} Dis_score:{:.3f}'.format(
+                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item(), score.item()))
 
                 if self.global_iter%self.ckpt_save_iter == 0:
                     self.save_checkpoint(self.global_iter)

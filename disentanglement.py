@@ -3,14 +3,15 @@ import random
 import torch
 
 from torch.utils.data import SubsetRandomSampler
+from torch.utils.data import Dataset, DataLoader
 
 
-class disentanglement_score:
-    def __init__(self, model, dataset, args):
+class Disentanglement_score:
+    def __init__(self, model, args, dataset, device):
         self.z_dim = args.z_dim
-        self.batch_size = args.batch_size
+        self.batch_size = args.score_batch_size
         self.num_workers = args.num_workers
-        self.device = args.device
+        self.device = device
         self.subset_size = args.subset_size
         self.sample_size = args.L
         self.vote_count = args.vote_count
@@ -22,68 +23,64 @@ class disentanglement_score:
 
         self.factor_idxs = [int(i) for i in args.factor_idxs.split(',')]
 
-        l = dataset.len()
+        l = len(dataset)
 
         if not self.subset_size:
-            self.subset_size = np.round(l*args.subset_fraction)
+            self.subset_size = int(np.round(l*args.subset_fraction))
 
-        assert l >= subset_size, 'subset cannot be bigger than the dataset'
+        assert l >= self.subset_size, 'subset cannot be bigger than the dataset'
 
-        subset = random.sample(range(0, l), subset_size)
+        subset = random.sample(range(0, l), self.subset_size)
 
-        dataloader = create_subsetloader(subset)
+        dataloader = self.create_subsetloader(subset)
 
-        latents = torch.zeros(subset_size, z_dim*2)
-        for c, input in enumerate(dataloader):
-            z = self.model(input.to(self.device), no_dec=True).cpu().detach()
-            latents[c:c+z.size(0)] = z
+        c = 0
+        latents = torch.zeros(self.subset_size, self.z_dim*2, requires_grad=False).to(self.device)
+        for input, _ in dataloader:
+            z = model.encode(input.to(self.device)).detach()
+            c2 = c+z.size(0)
+            latents[c:c2] = torch.flatten(z, 1)
+            c = c2
 
-        self.emp_std = torch.std(latents, dim=1, unbiased=True, keepdim=True)
+        self.emp_std = torch.std(latents, dim=0, unbiased=True).cpu()
 
     def fixed_factor_latents(self, model, fixed_factor_index):
         fixed_factor = random.randrange(self.max_classes[fixed_factor_index]+1)
-        sample_indices = numpy.random.choice(np.where(self.classes[:, fixed_factor_index] == fixed_factor)[0])
+        sample_indices = np.random.choice(np.where(self.classes[:, fixed_factor_index] == fixed_factor)[0], size=self.sample_size)
 
-        dataloader = create_subsetloader(sample_indices)
+        latents = model.encode(self.dataset[sample_indices][0].to(self.device))
 
-        c = 0
-        latents = torch.zeros(self.sample_size, z_dim*2)
-        for input in enumerate(dataloader):
-            z = self.model(input.to(self.device), no_dec=True).cpu().detach()
-            c2 = c+z.size(0)
-            latents[c:c2] = z
-            c = c2
-
-        return latents
+        return latents.detach().flatten(start_dim=1)
 
     def score(self, model):
-        tally = torch.zeros(max(self.factor_idxs), self.z_dim)
+        tally = torch.zeros(self.z_dim, max(self.factor_idxs)+1, requires_grad=False).to(self.device)
 
-        for _ in self.vote_count:
+        for _ in range(self.vote_count):
             fixed_factor_index = random.choice(self.factor_idxs)
-            latents = fixed_factor_latents(model)
-            norm_latents = latents/self.emp_std
+            latents = self.fixed_factor_latents(model, fixed_factor_index)
+            norm_latents = latents/self.emp_std.to(self.device)
+
             emp_var = self.empirical_variance(norm_latents)
 
             vote = torch.argmin(emp_var)
-            tally[fixed_factor_index, vote] += 1
+            tally[vote, fixed_factor_index] += 1
 
-        return torch.sum(torch.max(tally, dim=1))/self.vote_count
+        return torch.sum(torch.max(tally, dim=1).values).cpu()/self.vote_count
 
     def empirical_variance(self, latents):
         denom = (2*self.sample_size*(self.sample_size-1))
 
-        sum_d = torch.zeros(self.z_dim)
-        for i in latents:
-            d_i = torch.sum((latents - latents[i])**2, dim=1)
-            d_i = d_i[:z_dim] + d_i[z_dim:]
+        sum_d = torch.zeros(self.z_dim).to(self.device)
+        for latent in latents:
+            d_i = torch.sum((latents - latent)**2, dim=0)
+            d_i = d_i[:self.z_dim] + d_i[self.z_dim:]
 
             sum_d += d_i
 
         return sum_d/denom
 
     def create_subsetloader(self, indices):
-        sampler = SubsetRandomSampler(sample_indices)
+        sampler = SubsetRandomSampler(indices)
         dataloader = DataLoader(self.dataset,
                                 batch_size=self.batch_size,
                                 sampler=sampler,

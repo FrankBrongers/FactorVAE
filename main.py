@@ -1,6 +1,6 @@
 """main.py"""
 
-import argparse
+import argparse, random
 import numpy as np
 import torch
 
@@ -14,6 +14,7 @@ init_seed = 1
 torch.manual_seed(init_seed)
 torch.cuda.manual_seed(init_seed)
 np.random.seed(init_seed)
+random.seed(init_seed)
 
 
 def main(args):
@@ -41,11 +42,12 @@ if __name__ == "__main__":
     parser.add_argument('--subset_size', default=0, type=int, help='size of the subset used for empirical std in the disentanglement score, overwrites subset_fraction')
     parser.add_argument('--subset_fraction', default=0.1, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
     parser.add_argument('--L', default=100, type=int, help='L used for creating the votes in the disentanglement score')
-    parser.add_argument('--vote_count', default=800, type=float, help='Amount of votes needed for the disentanglement score')
-    parser.add_argument('--factor_idxs', default='1,2,3,4,5', type=int, help='factor indices the disentanglement score seperated by a comma, the first factor of dsprites is always zero and thus left out by default')
+    parser.add_argument('--vote_count', default=800, type=int, help='Amount of votes needed for the disentanglement score')
+    parser.add_argument('--factor_idxs', default='1,2,3,4,5', type=str, help='factor indices the disentanglement score seperated by a comma, the first factor of dsprites is always zero and thus left out by default')
+    parser.add_argument('--score_batch_size', default=64, type=int, help='batch size')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
-    parser.add_argument('--dataset', default='CelebA', type=str, help='dataset name')
+    parser.add_argument('--dataset', default='dsprites', type=str, help='dataset name')
     parser.add_argument('--image_size', default=64, type=int, help='image size. now only (64,64) is supported')
     parser.add_argument('--num_workers', default=2, type=int, help='dataloader num_workers')
 
