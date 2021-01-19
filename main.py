@@ -1,6 +1,6 @@
 """main.py"""
 
-import argparse, random
+import argparse
 import numpy as np
 import torch
 
@@ -10,20 +10,20 @@ from utils import str2bool
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
 
-init_seed = 1
-torch.manual_seed(init_seed)
-torch.cuda.manual_seed(init_seed)
-np.random.seed(init_seed)
-random.seed(init_seed)
-
 
 def main(args):
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
     net = Solver(args)
     net.train()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Factor-VAE')
+
+    parser.add_argument('--seed', default=0, type=int, help='the seed')
 
     parser.add_argument('--name', default='main', type=str, help='name of the experiment')
     parser.add_argument('--cuda', default=True, type=str2bool, help='enable cuda')
@@ -40,11 +40,11 @@ if __name__ == "__main__":
     parser.add_argument('--beta2_D', default=0.9, type=float, help='beta2 parameter of the Adam optimizer for the discriminator')
 
     parser.add_argument('--subset_size', default=0, type=int, help='size of the subset used for empirical std in the disentanglement score, overwrites subset_fraction')
-    parser.add_argument('--subset_fraction', default=0.1, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
+    parser.add_argument('--subset_fraction', default=0.5, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
     parser.add_argument('--L', default=100, type=int, help='L used for creating the votes in the disentanglement score')
     parser.add_argument('--vote_count', default=800, type=int, help='Amount of votes needed for the disentanglement score')
-    parser.add_argument('--factor_idxs', default='1,2,3,4,5', type=str, help='factor indices the disentanglement score seperated by a comma, the first factor of dsprites is always zero and thus left out by default')
     parser.add_argument('--score_batch_size', default=64, type=int, help='batch size')
+    parser.add_argument('--dis_score', default=1, type=bool, help='Whether the disentanglement score should be used')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='dsprites', type=str, help='dataset name')

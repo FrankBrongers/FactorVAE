@@ -5,87 +5,75 @@ import torch
 from torch.utils.data import SubsetRandomSampler
 from torch.utils.data import Dataset, DataLoader
 
+from ops import kl_divergence
 
-class Disentanglement_score:
-    def __init__(self, model, args, dataset, device):
-        self.z_dim = args.z_dim
-        self.batch_size = args.score_batch_size
-        self.num_workers = args.num_workers
-        self.device = device
-        self.subset_size = args.subset_size
-        self.sample_size = args.L
-        self.vote_count = args.vote_count
 
-        self.dataset = dataset
-        self.classes = dataset.latents_classes
-        self.max_classes = dataset.latents_classes[-1]
-        self.count_classes = len(self.max_classes)
+def disentanglement_score(model, device, dataset, z_dim, L=100, n_votes=800, verbose=False):
+    factors = dataset.latents_classes
+    max_factors = dataset.latents_classes[-1]
+    n_factors = len(max_factors)
 
-        self.factor_idxs = [int(i) for i in args.factor_idxs.split(',')]
+    n_votes_per_factor = int(n_votes / n_factors)
 
-        l = len(dataset)
+    all_latents = []
+    # Fix a factor k
+    for k_fixed in range(n_factors):
+        # Generate training examples for this factor
+        for _ in range(n_votes_per_factor):
+            # Fix a value for this factor
+            fixed_factor = np.random.randint(0, max_factors[k_fixed]+1)
+            sample_indices = np.random.choice(np.where(factors[:, k_fixed] == fixed_factor)[0], size=L)
 
-        if not self.subset_size:
-            self.subset_size = int(np.round(l*args.subset_fraction))
+            latents = model.encode(dataset[sample_indices][0].to(device)).detach().cpu().flatten(start_dim=1)
+            all_latents.append(latents)
 
-        assert l >= self.subset_size, 'subset cannot be bigger than the dataset'
+    # Concatenate every code
+    all_latents = torch.cat(all_latents)
 
-        subset = random.sample(range(0, l), self.subset_size)
+    # Now, lets compute the KL divergence of each dimension wrt the prior
+    emp_mean_kl = kl_divergence(all_latents[:, :z_dim], all_latents[:, z_dim:], dim_wise=True)
 
-        dataloader = self.create_subsetloader(subset)
+    # Throw the dimensions that collapsed to the prior
+    kl_tol = 1e-2
+    useful_dims = np.where(emp_mean_kl.numpy() > kl_tol)[0]
+    u_dim = len(useful_dims)
+    print(u_dim)
+    # useful_dims = np.concatenate((ud, ud+z_dim), axis=None)
 
-        c = 0
-        latents = torch.zeros(self.subset_size, self.z_dim*2, requires_grad=False).to(self.device)
-        for input, _ in dataloader:
-            z = model.encode(input.to(self.device)).detach()
-            c2 = c+z.size(0)
-            latents[c:c2] = torch.flatten(z, 1)
-            c = c2
+    # Compute scales for useful dims
+    scales = torch.std(all_latents[:, useful_dims], axis=0)
 
-        self.emp_std = torch.std(latents, dim=0, unbiased=True).cpu()
+    all_latents = all_latents[:, useful_dims]/scales
 
-    def fixed_factor_latents(self, model, fixed_factor_index):
-        fixed_factor = random.randrange(self.max_classes[fixed_factor_index]+1)
-        sample_indices = np.random.choice(np.where(self.classes[:, fixed_factor_index] == fixed_factor)[0], size=self.sample_size)
+    if verbose:
+        print("Empirical mean for kl dimension-wise:")
+        print(list(emp_mean_kl))
+        print("Useful dimensions:", list(useful_dims), " - Total:", useful_dims.shape[0])
+        print("Empirical Scales:", list(scales))
 
-        latents = model.encode(self.dataset[sample_indices][0].to(self.device))
+    r1 = 0
+    v_matrix = torch.zeros((u_dim, n_factors))
 
-        return latents.detach().flatten(start_dim=1)
+    # Fix a factor k
+    for k_fixed in range(n_factors):
+        # Generate training examples for this factor
+        for i in range(n_votes_per_factor):
+            r2 = r1 + L
+            norm_latents = all_latents[r1:r2]
+            # Take the empirical variance in each dimension of these normalised representations
+            emp_var = torch.var(norm_latents, axis=0)  # dimension (z_dim,), variance for each dimension of code
+            # Then the index of the dimension with the lowest variance...
+            d_j = torch.argmin(emp_var)
+            # ...and the target index k provide one training input/output example for the classifier majority vote
+            v_matrix[d_j, k_fixed] += 1
 
-    def score(self, model):
-        tally = torch.zeros(self.z_dim, max(self.factor_idxs)+1, requires_grad=False).to(self.device)
+            r1 = r2
 
-        for _ in range(self.vote_count):
-            fixed_factor_index = random.choice(self.factor_idxs)
-            latents = self.fixed_factor_latents(model, fixed_factor_index)
-            norm_latents = latents/self.emp_std.to(self.device)
+    # Since both inputs and outputs lie in a discrete space, the optimal classifier is the majority-vote classifier
+    # and the metric is the error rate of the classifier (actually they show the accuracy in the paper)
 
-            emp_var = self.empirical_variance(norm_latents)
+    if verbose:
+        print("Votes:")
+        print(v_matrix.numpy(), torch.sum(v_matrix, dim=0), torch.sum(v_matrix, dim=1))
 
-            vote = torch.argmin(emp_var)
-            tally[vote, fixed_factor_index] += 1
-
-        return torch.sum(torch.max(tally, dim=1).values).cpu()/self.vote_count
-
-    def empirical_variance(self, latents):
-        denom = (2*self.sample_size*(self.sample_size-1))
-
-        sum_d = torch.zeros(self.z_dim).to(self.device)
-        for latent in latents:
-            d_i = torch.sum((latents - latent)**2, dim=0)
-            d_i = d_i[:self.z_dim] + d_i[self.z_dim:]
-
-            sum_d += d_i
-
-        return sum_d/denom
-
-    def create_subsetloader(self, indices):
-        sampler = SubsetRandomSampler(indices)
-        dataloader = DataLoader(self.dataset,
-                                batch_size=self.batch_size,
-                                sampler=sampler,
-                                num_workers=self.num_workers,
-                                pin_memory=True,
-                                drop_last=False)
-
-        return dataloader
+    return torch.sum(torch.max(v_matrix, dim=1).values)/n_votes

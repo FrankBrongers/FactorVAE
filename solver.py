@@ -13,11 +13,13 @@ from utils import DataGather, mkdirs, grid2gif
 from ops import recon_loss, kl_divergence, permute_dims
 from model import FactorVAE1, FactorVAE2, Discriminator
 from dataset import return_data
-from disentanglement import Disentanglement_score
+from disentanglement import disentanglement_score
 
 
 class Solver(object):
     def __init__(self, args):
+        self.args = args
+
         # Misc
         use_cuda = args.cuda and torch.cuda.is_available()
         self.device = 'cuda' if use_cuda else 'cpu'
@@ -45,14 +47,18 @@ class Solver(object):
         self.beta1_D = args.beta1_D
         self.beta2_D = args.beta2_D
 
+        # Disentanglement score
+        self.L = args.L
+        self.vote_count = args.vote_count
+        self.dis_score = args.dis_score
+
         if args.dataset == 'dsprites':
             self.VAE = FactorVAE1(self.z_dim).to(self.device)
             self.nc = 1
-            self.dis_score = Disentanglement_score(self.VAE.eval(), args, self.dataset, self.device)
         else:
             self.VAE = FactorVAE2(self.z_dim).to(self.device)
             self.nc = 3
-            self.dis_score = None
+            self.dis_score = False
         self.optim_VAE = optim.Adam(self.VAE.parameters(), lr=self.lr_VAE,
                                     betas=(self.beta1_VAE, self.beta2_VAE))
 
@@ -128,7 +134,7 @@ class Solver(object):
 
                 if self.global_iter%self.print_iter == 0:
                     if self.dis_score:
-                        score = self.dis_score.score(self.VAE.eval())
+                        score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count)
                         self.VAE.train()
                     else:
                         score = 0
