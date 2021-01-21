@@ -34,11 +34,17 @@ def disentanglement_score(model, device, dataset, z_dim, L=100, n_votes=800, ver
     emp_mean_kl = kl_divergence(all_latents[:, :z_dim], all_latents[:, z_dim:], dim_wise=True)
 
     # Throw the dimensions that collapsed to the prior
-    kl_tol = 1e-2
+    kl_tol = 1e-5
     useful_dims = np.where(emp_mean_kl.numpy() > kl_tol)[0]
     u_dim = len(useful_dims)
-    print(u_dim)
-    # useful_dims = np.concatenate((ud, ud+z_dim), axis=None)
+
+    print(useful_dims)
+
+    if verbose:
+        print(u_dim)
+
+    # useful_dims = np.concatenate((useful_dims, useful_dims+z_dim), axis=None)
+    print(useful_dims)
 
     # Compute scales for useful dims
     scales = torch.std(all_latents[:, useful_dims], axis=0)
@@ -69,11 +75,11 @@ def disentanglement_score(model, device, dataset, z_dim, L=100, n_votes=800, ver
 
             r1 = r2
 
-    # Since both inputs and outputs lie in a discrete space, the optimal classifier is the majority-vote classifier
-    # and the metric is the error rate of the classifier (actually they show the accuracy in the paper)
-
     if verbose:
         print("Votes:")
         print(v_matrix.numpy(), torch.sum(v_matrix, dim=0), torch.sum(v_matrix, dim=1))
+
+    # Since both inputs and outputs lie in a discrete space, the optimal classifier is the majority-vote classifier
+    # and the metric is the error rate of the classifier (actually they show the accuracy in the paper)
 
     return torch.sum(torch.max(v_matrix, dim=1).values)/n_votes
