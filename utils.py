@@ -1,6 +1,6 @@
 """utils.py"""
 
-import os
+import os, json
 import argparse
 import subprocess
 
@@ -45,3 +45,8 @@ def grid2gif(image_str, output_gif, delay=100):
 def mkdirs(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+def save_args_outputs(path, args, outputs):
+    data = {'args': args, 'outputs': outputs}
+    with open(path, 'w') as f:
+        json.dump(data, f)

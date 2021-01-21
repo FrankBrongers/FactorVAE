@@ -9,7 +9,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.utils import make_grid, save_image
 
-from utils import DataGather, mkdirs, grid2gif
+from utils import DataGather, mkdirs, grid2gif, save_args_outputs
 from ops import recon_loss, kl_divergence, permute_dims
 from model import FactorVAE1, FactorVAE2, Discriminator
 from dataset import return_data
@@ -95,6 +95,12 @@ class Solver(object):
         self.output_save = args.output_save
         mkdirs(self.output_dir)
 
+        # Vars
+        self.vars_dir = os.path.join(args.vars_dir, args.name)
+        self.vars_save = args.vars_save
+
+        self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'dis_score': []}
+
     def train(self):
         self.net_mode(train=True)
 
@@ -134,13 +140,20 @@ class Solver(object):
 
                 if self.global_iter%self.print_iter == 0:
                     if self.dis_score:
-                        score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count)
+                        dis_score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count)
                         self.VAE.train()
                     else:
                         score = 0
 
                     self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} D_tc_loss:{:.3f} Dis_score:{:.3f}'.format(
-                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item(), score.item()))
+                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item(), dis_score.item()))
+
+                    if self.vars_save:
+                        self.outputs['vae_recon_loss'].append(vae_recon_loss)
+                        self.outputs['vae_kld'].append(vae_kld)
+                        self.outputs['vae_tc_loss'].append(vae_tc_loss)
+                        self.outputs['D_tc_loss'].append(D_tc_loss)
+                        self.outputs['dis_score'].append(dis_score)
 
                 if self.global_iter%self.ckpt_save_iter == 0:
                     self.save_checkpoint(self.global_iter)
@@ -179,6 +192,9 @@ class Solver(object):
 
         self.pbar.write("[Training Finished]")
         self.pbar.close()
+
+        if self.vars_save:
+            save_args_outputs(self.vars_dir, self.args, self.outputs)
 
     def visualize_recon(self):
         data = self.image_gather.data

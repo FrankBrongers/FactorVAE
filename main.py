@@ -12,6 +12,8 @@ torch.backends.cudnn.benchmark = True
 
 
 def main(args):
+    print(vars(args))
+    return
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -44,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument('--L', default=100, type=int, help='L used for creating the votes in the disentanglement score')
     parser.add_argument('--vote_count', default=800, type=int, help='Amount of votes needed for the disentanglement score')
     parser.add_argument('--score_batch_size', default=64, type=int, help='batch size')
-    parser.add_argument('--dis_score', default=1, type=bool, help='Whether the disentanglement score should be used')
+    parser.add_argument('--dis_score', default=True, type=str2bool, help='Whether the disentanglement score should be used')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='dsprites', type=str, help='dataset name')
@@ -66,6 +68,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--output_dir', default='outputs', type=str, help='output directory')
     parser.add_argument('--output_save', default=True, type=str2bool, help='whether to save traverse results')
+
+    parser.add_argument('--vars_dir', default='vars', type=str, help='vars directory, saves the arguments and outputs')
+    parser.add_argument('--vars_save', default=True, type=str2bool, help='whether to save traverse results')
 
     args = parser.parse_args()
 
