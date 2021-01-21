@@ -12,8 +12,6 @@ torch.backends.cudnn.benchmark = True
 
 
 def main(args):
-    print(vars(args))
-    return
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
     np.random.seed(args.seed)

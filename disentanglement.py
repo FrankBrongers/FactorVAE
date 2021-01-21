@@ -38,13 +38,7 @@ def disentanglement_score(model, device, dataset, z_dim, L=100, n_votes=800, ver
     useful_dims = np.where(emp_mean_kl.numpy() > kl_tol)[0]
     u_dim = len(useful_dims)
 
-    print(useful_dims)
-
-    if verbose:
-        print(u_dim)
-
     # useful_dims = np.concatenate((useful_dims, useful_dims+z_dim), axis=None)
-    print(useful_dims)
 
     # Compute scales for useful dims
     scales = torch.std(all_latents[:, useful_dims], axis=0)
@@ -52,6 +46,8 @@ def disentanglement_score(model, device, dataset, z_dim, L=100, n_votes=800, ver
     all_latents = all_latents[:, useful_dims]/scales
 
     if verbose:
+        print("Remaining dimensions")
+        print(u_dim)
         print("Empirical mean for kl dimension-wise:")
         print(list(emp_mean_kl))
         print("Useful dimensions:", list(useful_dims), " - Total:", useful_dims.shape[0])
@@ -77,7 +73,7 @@ def disentanglement_score(model, device, dataset, z_dim, L=100, n_votes=800, ver
 
     if verbose:
         print("Votes:")
-        print(v_matrix.numpy(), torch.sum(v_matrix, dim=0), torch.sum(v_matrix, dim=1))
+        print(v_matrix.numpy())
 
     # Since both inputs and outputs lie in a discrete space, the optimal classifier is the majority-vote classifier
     # and the metric is the error rate of the classifier (actually they show the accuracy in the paper)

@@ -47,6 +47,6 @@ def mkdirs(path):
         os.makedirs(path)
 
 def save_args_outputs(path, args, outputs):
-    data = {'args': args, 'outputs': outputs}
-    with open(path, 'w') as f:
+    data = {'args': vars(args), 'outputs': outputs}
+    with open(path+'.json', 'w') as f:
         json.dump(data, f)

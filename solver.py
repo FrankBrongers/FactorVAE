@@ -84,19 +84,19 @@ class Solver(object):
                 self.viz_init()
 
         # Checkpoint
-        self.ckpt_dir = os.path.join(args.ckpt_dir, args.name)
+        self.ckpt_dir = os.path.join(args.ckpt_dir, args.name+str(args.seed))
         self.ckpt_save_iter = args.ckpt_save_iter
         mkdirs(self.ckpt_dir)
         if args.ckpt_load:
             self.load_checkpoint(args.ckpt_load)
 
         # Output(latent traverse GIF)
-        self.output_dir = os.path.join(args.output_dir, args.name)
+        self.output_dir = os.path.join(args.output_dir, args.name+str(args.seed))
         self.output_save = args.output_save
         mkdirs(self.output_dir)
 
         # Vars
-        self.vars_dir = os.path.join(args.vars_dir, args.name)
+        self.vars_dir = os.path.join(args.vars_dir, args.name+str(args.seed))
         self.vars_save = args.vars_save
 
         self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'dis_score': []}
@@ -149,11 +149,11 @@ class Solver(object):
                         self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item(), dis_score.item()))
 
                     if self.vars_save:
-                        self.outputs['vae_recon_loss'].append(vae_recon_loss)
-                        self.outputs['vae_kld'].append(vae_kld)
-                        self.outputs['vae_tc_loss'].append(vae_tc_loss)
-                        self.outputs['D_tc_loss'].append(D_tc_loss)
-                        self.outputs['dis_score'].append(dis_score)
+                        self.outputs['vae_recon_loss'].append(vae_recon_loss.item())
+                        self.outputs['vae_kld'].append(vae_kld.item())
+                        self.outputs['vae_tc_loss'].append(vae_tc_loss.item())
+                        self.outputs['D_tc_loss'].append(D_tc_loss.item())
+                        self.outputs['dis_score'].append(dis_score.item())
 
                 if self.global_iter%self.ckpt_save_iter == 0:
                     self.save_checkpoint(self.global_iter)
