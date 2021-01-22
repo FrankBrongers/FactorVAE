@@ -9,14 +9,17 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.utils import make_grid, save_image
 
-from utils import DataGather, mkdirs, grid2gif
+from utils import DataGather, mkdirs, grid2gif, save_args_outputs
 from ops import recon_loss, kl_divergence, permute_dims
 from model import FactorVAE1, FactorVAE2, Discriminator
 from dataset import return_data
+from disentanglement import disentanglement_score
 
 
 class Solver(object):
     def __init__(self, args):
+        self.args = args
+
         # Misc
         use_cuda = args.cuda and torch.cuda.is_available()
         self.device = 'cuda' if use_cuda else 'cpu'
@@ -30,7 +33,7 @@ class Solver(object):
         self.dset_dir = args.dset_dir
         self.dataset = args.dataset
         self.batch_size = args.batch_size
-        self.data_loader = return_data(args)
+        self.data_loader, self.dataset = return_data(args)
 
         # Networks & Optimizers
         self.z_dim = args.z_dim
@@ -44,12 +47,18 @@ class Solver(object):
         self.beta1_D = args.beta1_D
         self.beta2_D = args.beta2_D
 
+        # Disentanglement score
+        self.L = args.L
+        self.vote_count = args.vote_count
+        self.dis_score = args.dis_score
+
         if args.dataset == 'dsprites':
             self.VAE = FactorVAE1(self.z_dim).to(self.device)
             self.nc = 1
         else:
             self.VAE = FactorVAE2(self.z_dim).to(self.device)
             self.nc = 3
+            self.dis_score = False
         self.optim_VAE = optim.Adam(self.VAE.parameters(), lr=self.lr_VAE,
                                     betas=(self.beta1_VAE, self.beta2_VAE))
 
@@ -75,16 +84,22 @@ class Solver(object):
                 self.viz_init()
 
         # Checkpoint
-        self.ckpt_dir = os.path.join(args.ckpt_dir, args.name)
+        self.ckpt_dir = os.path.join(args.ckpt_dir, args.name+'_'+str(args.seed))
         self.ckpt_save_iter = args.ckpt_save_iter
         mkdirs(self.ckpt_dir)
         if args.ckpt_load:
             self.load_checkpoint(args.ckpt_load)
 
         # Output(latent traverse GIF)
-        self.output_dir = os.path.join(args.output_dir, args.name)
+        self.output_dir = os.path.join(args.output_dir, args.name+'_'+str(args.seed))
         self.output_save = args.output_save
         mkdirs(self.output_dir)
+
+        # Vars
+        self.vars_dir = os.path.join(args.vars_dir, args.name+'_'+str(args.seed))
+        self.vars_save = args.vars_save
+
+        self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'dis_score': [], 'iteration': []}
 
     def train(self):
         self.net_mode(train=True)
@@ -124,8 +139,22 @@ class Solver(object):
                 self.optim_D.step()
 
                 if self.global_iter%self.print_iter == 0:
-                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} D_tc_loss:{:.3f}'.format(
-                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item()))
+                    if self.dis_score:
+                        dis_score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count)
+                        self.VAE.train()
+                    else:
+                        score = 0
+
+                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} D_tc_loss:{:.3f} Dis_score:{:.3f}'.format(
+                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item(), dis_score.item()))
+
+                    if self.vars_save:
+                        self.outputs['vae_recon_loss'].append(vae_recon_loss.item())
+                        self.outputs['vae_kld'].append(vae_kld.item())
+                        self.outputs['vae_tc_loss'].append(vae_tc_loss.item())
+                        self.outputs['D_tc_loss'].append(D_tc_loss.item())
+                        self.outputs['dis_score'].append(dis_score.item())
+                        self.outputs['iteration'].append(self.global_iter)
 
                 if self.global_iter%self.ckpt_save_iter == 0:
                     self.save_checkpoint(self.global_iter)
@@ -164,6 +193,9 @@ class Solver(object):
 
         self.pbar.write("[Training Finished]")
         self.pbar.close()
+
+        if self.vars_save:
+            save_args_outputs(self.vars_dir, self.args, self.outputs)
 
     def visualize_recon(self):
         data = self.image_gather.data

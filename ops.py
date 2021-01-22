@@ -10,8 +10,11 @@ def recon_loss(x, x_recon):
     return loss
 
 
-def kl_divergence(mu, logvar):
-    kld = -0.5*(1+logvar-mu**2-logvar.exp()).sum(1).mean()
+def kl_divergence(mu, logvar, dim_wise=False):
+    if dim_wise:
+        kld = -0.5*(1+logvar-mu**2-logvar.exp()).mean(0)
+    else:
+        kld = -0.5*(1+logvar-mu**2-logvar.exp()).sum(1).mean()
     return kld
 
 
