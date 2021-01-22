@@ -84,22 +84,22 @@ class Solver(object):
                 self.viz_init()
 
         # Checkpoint
-        self.ckpt_dir = os.path.join(args.ckpt_dir, args.name+str(args.seed))
+        self.ckpt_dir = os.path.join(args.ckpt_dir, args.name+'_'+str(args.seed))
         self.ckpt_save_iter = args.ckpt_save_iter
         mkdirs(self.ckpt_dir)
         if args.ckpt_load:
             self.load_checkpoint(args.ckpt_load)
 
         # Output(latent traverse GIF)
-        self.output_dir = os.path.join(args.output_dir, args.name+str(args.seed))
+        self.output_dir = os.path.join(args.output_dir, args.name+'_'+str(args.seed))
         self.output_save = args.output_save
         mkdirs(self.output_dir)
 
         # Vars
-        self.vars_dir = os.path.join(args.vars_dir, args.name+str(args.seed))
+        self.vars_dir = os.path.join(args.vars_dir, args.name+'_'+str(args.seed))
         self.vars_save = args.vars_save
 
-        self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'dis_score': []}
+        self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'dis_score': [], 'iteration': []}
 
     def train(self):
         self.net_mode(train=True)
@@ -154,6 +154,7 @@ class Solver(object):
                         self.outputs['vae_tc_loss'].append(vae_tc_loss.item())
                         self.outputs['D_tc_loss'].append(D_tc_loss.item())
                         self.outputs['dis_score'].append(dis_score.item())
+                        self.outputs['iteration'].append(self.global_iter)
 
                 if self.global_iter%self.ckpt_save_iter == 0:
                     self.save_checkpoint(self.global_iter)
