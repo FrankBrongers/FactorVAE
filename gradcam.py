@@ -1,42 +1,20 @@
-from __future__ import print_function
-
 from collections import OrderedDict
 
-import cv2
 import numpy as np
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
 from torch.nn import functional as F
 import os
 
 
 class PropBase(object):
-
-    def __init__(self, model, target_layer, device):
+    def __init__(self, model, target_layer, device, image_size):
         self.model = model
         self.device = device
-        self.model.to(self.device)
-        self.model.eval()
+        self.image_size = image_size
         self.target_layer = target_layer
         self.outputs_backward = OrderedDict()
         self.outputs_forward = OrderedDict()
         self.set_hook_func()
-
-    def forward(self, x):
-        self.preds = self.model(x)
-        self.image_size = x.size(-1)
-        # Note: model moet ook z als output returnen, anders werkt niet.
-        recon_batch, self.mu, self.logvar, self.z = self.model(x)
-        return recon_batch, self.mu, self.logvar
-
-
-    def backward(self, mu, logvar, mu_avg, logvar_avg):
-        self.model.zero_grad()
-
-        mu = mu.to(self.device)
-        self.score_fc = torch.sum(mu)
-        self.score_fc.backward(retain_graph=True)
 
     def get_conv_outputs(self, outputs, target_layer):
         """
@@ -47,6 +25,7 @@ class PropBase(object):
         """
         return list(outputs.values())[0]
 
+
 class GradCAM(PropBase):
     # hook functions to compute gradients wrt intermediate results
     # so dz/dL and dz/dL not dW/dL as usual
@@ -56,7 +35,7 @@ class GradCAM(PropBase):
             Hook call function that stores the backward pass gradients for every
             network module in a dictionary.
             """
-            self.outputs_backward[id(module)] = grad_out[0].cpu()
+            self.outputs_backward[id(module)] = grad_out[0]
 
         def func_f(module, input, f_output):
             """
@@ -73,45 +52,32 @@ class GradCAM(PropBase):
                 module[1].register_backward_hook(func_b)
                 module[1].register_forward_hook(func_f)
 
-    def generate(self):
+    def generate(self, z):
         """
-        Generates attention map and all individual maps per latent dimension.
+        Generates attention map and all individual maps per latent dimension z.
         """
 
-        self.A = self.get_conv_outputs(
-            self.outputs_forward, self.target_layer)
+        A = self.get_conv_outputs(self.outputs_forward, self.target_layer)
 
-        b, n, w, h = self.A.shape
+        b, n, w, h = A.shape
 
-        M_list = torch.zeros([self.z.shape[1], b, self.image_size, self.image_size]).cuda()
-        print('Mlist shape', M_list.shape )
-        print('z shape', self.z.shape)
+        M_list = torch.zeros([z.shape[1], b, self.image_size, self.image_size]).to(self.device)
 
-        for i, z_i in enumerate(self.z[1]):
+        for i, z_i in enumerate(z[1]):
+            one_hot = torch.zeros_like(z)
+            one_hot[:,i] = 1
+            self.model.zero_grad()
+            z.backward(gradient=one_hot, retain_graph=True)
+
             self.grads = self.get_conv_outputs(self.outputs_backward, self.target_layer)
 
-            one_hot = torch.zeros_like(self.z)
+            gradients = self.grads[0].to(self.device)
+            a_k = torch.sum(gradients, dim=(1,2)) / (gradients.shape[1] * gradients.shape[2])
 
-            one_hot[:,i] = 1
-
-            self.z.backward(gradient = one_hot, retain_graph=True)
-
-            gradients = self.grads.cpu().data.numpy()[0]
-            a_k = np.sum(gradients, axis=(1,2)) / (gradients.shape[1] * gradients.shape[2])
-
-            M_i = torch.zeros_like(self.A[:, 1, :, :])
-
-            for k in range(n):
-                M_i += F.relu(a_k[k] * self.A[:, k, :, :])
-
-            M_i = M_i.view(M_i.shape[0], 1, M_i.shape[1], M_i.shape[2])
+            M_i = F.relu(a_k*A).sum(dim=1, keepdim=True)
             M_i = F.interpolate(M_i, (self.image_size, self.image_size),
                                     mode="bilinear", align_corners=True)
             M_i = M_i.squeeze(1)
             M_list[i, :, :, :] += M_i
-            print(M_list.shape)
 
-        M = torch.mean(M_list, dim=0)
-        M = M.squeeze(1)
-
-        return M, M_list
+        return M_list
