@@ -2,6 +2,7 @@
 
 import os
 import visdom
+import numpy.random as random
 from tqdm import tqdm
 
 import torch
@@ -10,10 +11,11 @@ import torch.nn.functional as F
 from torchvision.utils import make_grid, save_image
 
 from utils import DataGather, mkdirs, grid2gif, save_args_outputs
-from ops import recon_loss, kl_divergence, permute_dims
+from ops import recon_loss, ad_loss, kl_divergence, permute_dims
 from model import FactorVAE1, FactorVAE2, Discriminator
 from dataset import return_data
 from disentanglement import disentanglement_score
+from gradcam import GradCAM
 
 
 class Solver(object):
@@ -68,6 +70,13 @@ class Solver(object):
 
         self.nets = [self.VAE, self.D]
 
+        # Attention Disentanglement loss
+        self.ad_loss = args.ad_loss
+        self.lamb = args.lamb
+        if self.ad_loss:
+            self.gcam = GradCAM(self.VAE.encode, args.target_layer, self.device, args.image_size)
+            self.pick2 = True
+
         # Visdom
         self.viz_on = args.viz_on
         self.win_id = dict(D_z='win_D_z', recon='win_recon', kld='win_kld', acc='win_acc')
@@ -99,7 +108,7 @@ class Solver(object):
         self.vars_dir = os.path.join(args.vars_dir, args.name+'_'+str(args.seed))
         self.vars_save = args.vars_save
 
-        self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'dis_score': [], 'iteration': []}
+        self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'ad_loss': [], 'dis_score': [], 'iteration': []}
 
     def train(self):
         self.net_mode(train=True)
@@ -116,12 +125,13 @@ class Solver(object):
                 x_true1 = x_true1.to(self.device)
                 x_recon, mu, logvar, z = self.VAE(x_true1)
                 vae_recon_loss = recon_loss(x_true1, x_recon)
+                vae_ad_loss = self.get_ad_loss(z)
                 vae_kld = kl_divergence(mu, logvar)
 
                 D_z = self.D(z)
                 vae_tc_loss = (D_z[:, :1] - D_z[:, 1:]).mean()
 
-                vae_loss = vae_recon_loss + vae_kld + self.gamma*vae_tc_loss
+                vae_loss = vae_recon_loss + vae_kld + self.gamma*vae_tc_loss + self.lamb*vae_ad_loss
 
                 x_true2 = x_true2.to(self.device)
                 z_prime = self.VAE(x_true2, no_dec=True)
@@ -143,16 +153,17 @@ class Solver(object):
                         dis_score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count)
                         self.VAE.train()
                     else:
-                        score = 0
+                        dis_score = torch.tensor(0)
 
-                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} D_tc_loss:{:.3f} Dis_score:{:.3f}'.format(
-                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), D_tc_loss.item(), dis_score.item()))
+                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} ad_loss:{:.3f} D_tc_loss:{:.3f} Dis_score:{:.3f}'.format(
+                        self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), vae_ad_loss.item(), D_tc_loss.item(), dis_score.item()))
 
                     if self.vars_save:
                         self.outputs['vae_recon_loss'].append(vae_recon_loss.item())
                         self.outputs['vae_kld'].append(vae_kld.item())
                         self.outputs['vae_tc_loss'].append(vae_tc_loss.item())
                         self.outputs['D_tc_loss'].append(D_tc_loss.item())
+                        self.outputs['ad_loss'].append(vae_ad_loss.item())
                         self.outputs['dis_score'].append(dis_score.item())
                         self.outputs['iteration'].append(self.global_iter)
 
@@ -196,6 +207,16 @@ class Solver(object):
 
         if self.vars_save:
             save_args_outputs(self.vars_dir, self.args, self.outputs)
+
+    def get_ad_loss(self, z):
+        if not self.ad_loss:
+            return torch.tensor(0)
+
+        z_picked = z[:, random.randint(0, self.z_dim, size=2)]
+        M = self.gcam.generate(z_picked)
+
+        return ad_loss(M.flatten(1), self.batch_size, self.pick2)
+
 
     def visualize_recon(self):
         data = self.image_gather.data

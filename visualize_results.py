@@ -18,7 +18,11 @@ def main(args):
         data[file[:-7]].append(load_data(os.path.join(args.dir, file)))
 
     variables = ['vae_recon_loss', 'vae_kld', 'vae_tc_loss', 'D_tc_loss', 'dis_score']
-    full_variables = ['Reconstruction Loss', 'KL-divergence', 'VAE TC-Loss', 'Discriminator TC-Loss', 'Disentanglement Score']
+    full_variables = ['reconstruction error', 'KL-divergence', 'VAE TC-Loss', 'discriminator TC-loss', 'disentanglement metric']
+    if args.ad_loss:
+        variables.append('ad_loss')
+        full_variables.append('attention disentanglement loss')
+
 
     for i, v in enumerate(variables):
         fig = plt.figure()
@@ -48,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument('--names', default='main', type=str, help='names of the experiments to be plotted')
     parser.add_argument('--dir', default='vars', type=str, help='name of the directory holding the results')
     parser.add_argument('--output_dir', default='results', type=str, help='name of the directory holding the results')
+    parser.add_argument('--ad_loss', type=bool, const=True, default=False, nargs='?', help='add if the attention disentanglement loss should be used')
 
     args = parser.parse_args()
 

@@ -39,12 +39,16 @@ if __name__ == "__main__":
     parser.add_argument('--beta1_D', default=0.5, type=float, help='beta1 parameter of the Adam optimizer for the discriminator')
     parser.add_argument('--beta2_D', default=0.9, type=float, help='beta2 parameter of the Adam optimizer for the discriminator')
 
+    parser.add_argument('--ad_loss', type=bool, const=True, default=False, nargs='?', help='add if the attention disentanglement loss should be used')
+    parser.add_argument('--target_layer', type=str, default='0', help='target layer for the attention maps')
+    parser.add_argument('--lamb', default=1, type=float, help='lambda hyperparameter for the attention disentanglement loss')
+
     parser.add_argument('--subset_size', default=0, type=int, help='size of the subset used for empirical std in the disentanglement score, overwrites subset_fraction')
     parser.add_argument('--subset_fraction', default=0.5, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
     parser.add_argument('--L', default=100, type=int, help='L used for creating the votes in the disentanglement score')
     parser.add_argument('--vote_count', default=800, type=int, help='Amount of votes needed for the disentanglement score')
     parser.add_argument('--score_batch_size', default=64, type=int, help='batch size')
-    parser.add_argument('--dis_score', default=True, type=str2bool, help='Whether the disentanglement score should be used')
+    parser.add_argument('--dis_score', type=bool, const=True, default=False, nargs='?', help='Add if the disentanglement score should be measured')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='dsprites', type=str, help='dataset name')
