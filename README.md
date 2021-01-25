@@ -6,7 +6,7 @@ Pytorch implementation of FactorVAE proposed in Disentangling by Factorising, Ki
 ```
 python 3.8.5
 pytorch 1.7.1
-torchvision=0.8.2
+torchvision 0.8.2
 visdom
 tqdm
 ```
