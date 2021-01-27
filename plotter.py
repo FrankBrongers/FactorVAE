@@ -88,7 +88,7 @@ def load_data(path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Score/Loss Visualizer')
+    parser = argparse.ArgumentParser(description='Score/Loss Plotter')
 
     parser.add_argument('--names', default='main', type=str, help='names of the experiments to be plotted')
     parser.add_argument('--dir', default='vars', type=str, help='name of the directory holding the results')

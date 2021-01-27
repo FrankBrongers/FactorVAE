@@ -21,7 +21,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Factor-VAE')
+    parser = argparse.ArgumentParser(description='(AD) Factor-VAE')
 
     parser.add_argument('--seed', default=0, type=int, help='the seed')
 
