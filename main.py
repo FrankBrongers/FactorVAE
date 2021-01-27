@@ -43,12 +43,10 @@ if __name__ == "__main__":
     parser.add_argument('--target_layer', type=str, default='0', help='target layer for the attention maps')
     parser.add_argument('--lamb', default=1, type=float, help='lambda hyperparameter for the attention disentanglement loss')
 
-    parser.add_argument('--subset_size', default=0, type=int, help='size of the subset used for empirical std in the disentanglement score, overwrites subset_fraction')
-    parser.add_argument('--subset_fraction', default=0.5, type=float, help='fraction of the subset used for empirical std in the disentanglement score')
-    parser.add_argument('--L', default=100, type=int, help='L used for creating the votes in the disentanglement score')
-    parser.add_argument('--vote_count', default=800, type=int, help='Amount of votes needed for the disentanglement score')
-    parser.add_argument('--score_batch_size', default=64, type=int, help='batch size')
-    parser.add_argument('--dis_score', type=bool, const=True, default=False, nargs='?', help='Add if the disentanglement score should be measured')
+    parser.add_argument('--L', default=100, type=int, help='amount of samples used for creating the votes in the disentanglement score')
+    parser.add_argument('--vote_count', default=800, type=int, help='amount of votes needed for the disentanglement score')
+    parser.add_argument('--dis_score', type=bool, const=True, default=False, nargs='?', help='add if the disentanglement score should be measured')
+    parser.add_argument('--dis_batch_size', default=2048, type=int, help='batch size for the disentanglement score')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='dsprites', type=str, help='dataset name')

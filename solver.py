@@ -53,6 +53,7 @@ class Solver(object):
         self.L = args.L
         self.vote_count = args.vote_count
         self.dis_score = args.dis_score
+        self.dis_batch_size = args.dis_batch_size
 
         if args.dataset == 'dsprites':
             self.VAE = FactorVAE1(self.z_dim).to(self.device)
@@ -150,12 +151,12 @@ class Solver(object):
 
                 if self.global_iter%self.print_iter == 0:
                     if self.dis_score:
-                        dis_score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count)
+                        dis_score = disentanglement_score(self.VAE.eval(), self.device, self.dataset, self.z_dim, self.L, self.vote_count, self.dis_batch_size)
                         self.VAE.train()
                     else:
                         dis_score = torch.tensor(0)
 
-                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} ad_loss:{:.3f} D_tc_loss:{:.3f} Dis_score:{:.3f}'.format(
+                    self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} ad_loss:{:.3f} D_tc_loss:{:.3f} dis_score:{:.3f}'.format(
                         self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), vae_ad_loss.item(), D_tc_loss.item(), dis_score.item()))
 
                     if self.vars_save:
