@@ -6,31 +6,11 @@ import numpy as np
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision.datasets import ImageFolder
 from torchvision import transforms
 
 
 def is_power_of_2(num):
     return ((num & (num - 1)) == 0) and num != 0
-
-
-class CustomImageFolder(ImageFolder):
-    def __init__(self, root, transform=None):
-        super(CustomImageFolder, self).__init__(root, transform)
-        self.indices = range(len(self))
-
-    def __getitem__(self, index1):
-        index2 = random.choice(self.indices)
-
-        path1 = self.imgs[index1][0]
-        path2 = self.imgs[index2][0]
-        img1 = self.loader(path1)
-        img2 = self.loader(path2)
-        if self.transform is not None:
-            img1 = self.transform(img1)
-            img2 = self.transform(img2)
-
-        return img1, img2
 
 
 class CustomTensorDataset(Dataset):
@@ -67,15 +47,7 @@ def return_data(args):
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),])
 
-    if name.lower() == 'celeba':
-        root = os.path.join(dset_dir, 'CelebA')
-        train_kwargs = {'root':root, 'transform':transform}
-        dset = CustomImageFolder
-    elif name.lower() == '3dchairs':
-        root = os.path.join(dset_dir, '3DChairs')
-        train_kwargs = {'root':root, 'transform':transform}
-        dset = CustomImageFolder
-    elif name.lower() == 'dsprites':
+    if name.lower() == 'dsprites':
         root = os.path.join(dset_dir, 'dsprites-dataset/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
         data = np.load(root, encoding='latin1')
         imgs = torch.from_numpy(data['imgs']).unsqueeze(1).float()
@@ -84,7 +56,6 @@ def return_data(args):
         dset = CustomTensorDataset
     else:
         raise NotImplementedError
-
 
     train_data = dset(**train_kwargs)
     train_loader = DataLoader(train_data,

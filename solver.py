@@ -7,11 +7,10 @@ from tqdm import tqdm
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from torchvision.utils import make_grid, save_image
 
-from utils import DataGather, mkdirs, grid2gif, save_args_outputs
+from utils import mkdirs, save_args_outputs
 from ops import recon_loss, ad_loss, kl_divergence, permute_dims
-from model import FactorVAE1, FactorVAE2, Discriminator
+from model import FactorVAE1, Discriminator
 from dataset import return_data
 from disentanglement import disentanglement_score
 from gradcam import GradCAM
