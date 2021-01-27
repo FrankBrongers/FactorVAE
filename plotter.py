@@ -53,6 +53,8 @@ def main(args):
         plt.show()
 
     # Generate reconstrucion error against disentanglement score as in the paper
+    recons, scores, annotations = [], [], []
+
     fig = plt.figure()
     for name in names:
         recon = np.mean([file['outputs']['vae_recon_loss'] for file in data[name]], axis=0)[-1]
@@ -60,23 +62,40 @@ def main(args):
 
         try:
             assert data[name][0]['args']['ad_loss'] == True
-            label = r'$\gamma=$'+str(data[name][0]['args']['gamma']) + r', $\lambda=$'+str(data[name][0]['args']['lamb'])
+            # label = r'$\gamma=$'+str(data[name][0]['args']['gamma']) + r', $\lambda=$'+str(data[name][0]['args']['lamb'])
+            label = 'AD-FactorVAE'
+            marker = 'o'
+            color = 'red'
+            annotation = r'$\lambda$'+str(int(data[name][0]['args']['lamb']))+'L'+str(data[name][0]['args']['target_layer'])
+            recons.append(recon)
+            scores.append(dis)
+            annotations.append(annotation)
         except:
-            label = r'$\gamma=$'+str(data[name][0]['args']['gamma'])
+            # label = r'$\gamma=$'+str(data[name][0]['args']['gamma'])
+            label = 'FactorVAE'
+            marker = 'D'
+            color = 'green'
 
-        plt.scatter(recon, dis, label=label)
+        plt.scatter(recon, dis, label=label, c=color, marker=marker, edgecolors='black')
 
     plt.axis([0, 150, .6, 1.00])
     plt.xticks([0, 50, 100, 150])
+
+    plt.xlabel('reconstrucion error')
+    plt.ylabel('disentanglement metric')
 
     ax = plt.gca()
     ax.set_axisbelow(True)
     ax.grid(True, color='w')
     ax.set_facecolor('lightblue')
 
-    plt.xlabel('reconstrucion error')
-    plt.ylabel('disentanglement metric')
-    plt.legend()
+    for i, annotation in enumerate(annotations):
+        ax.annotate(annotation, (recons[i], scores[i]))
+
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
     plt.show()
 
 
