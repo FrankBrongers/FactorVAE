@@ -10,13 +10,12 @@ torchvision 0.8.1
 opencv 4.5.0
 tqdm
 ```
-<br>
-You can easily install al dependencies with anaconda using
+You can easily install al dependencies with anaconda using <br>
+
 ```
 conda env create -f environment.yml
 ```
 
-<br>
 
 ### 2D Shapes(dsprites) Dataset
 ```
