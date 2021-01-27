@@ -4,6 +4,25 @@ import torch.nn as nn
 import torch.nn.init as init
 
 
+class View(nn.Module):
+    """Custom View module to get the right shapes in the Sequential modules."""
+    def __init__(self, shape):
+        super(View, self).__init__()
+        self.shape = shape
+
+    def forward(self, x):
+        shape = (x.size(0), *self.shape)
+        return x.view(shape)
+
+class Chicken(nn.Module):
+    def __init__(self):
+        super(Chicken, self).__init__()
+
+    def forward(self, x):
+        print(x.shape)
+        return x
+
+
 class Discriminator(nn.Module):
     def __init__(self, z_dim):
         super(Discriminator, self).__init__()
@@ -51,14 +70,22 @@ class FactorVAE1(nn.Module):
             nn.ReLU(True),
             nn.Conv2d(64, 64, 4, 2, 1),
             nn.ReLU(True),
-            nn.Conv2d(64, 128, 4, 1),
-            nn.ReLU(True),
-            nn.Conv2d(128, 2*z_dim, 1)
+            # nn.Conv2d(64, 128, 4, 1),
+            # nn.ReLU(True),
+            # nn.Conv2d(128, 2*z_dim, 1)
+            nn.Flatten(),
+            # Chicken(),
+            nn.Linear(1024, 128),
+            nn.Linear(128, 2*z_dim)
         )
         self.decode = nn.Sequential(
-            nn.Conv2d(z_dim, 128, 1),
+            nn.Linear(z_dim, 128),
             nn.ReLU(True),
-            nn.ConvTranspose2d(128, 64, 4),
+            nn.Linear(128, 4*4*64),
+            View((64, 4, 4)),
+            # nn.Conv2d(z_dim, 128, 1),
+            # nn.ReLU(True),
+            # nn.ConvTranspose2d(128, 64, 4),
             nn.ReLU(True),
             nn.ConvTranspose2d(64, 64, 4, 2, 1),
             nn.ReLU(True),
