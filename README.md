@@ -5,19 +5,24 @@ Pytorch implementation of FactorVAE proposed in Disentangling by Factorising, Ki
 ### Dependencies
 ```
 python 3.8.5
-pytorch 1.7.1
-torchvision 0.8.2
+pytorch 1.7.0
+torchvision 0.8.1
+opencv 4.5.0
 tqdm
 ```
 <br>
+You can easily install al dependencies with anaconda using
+```
+conda env create -f environment.yml
+```
 
-### Datasets
-1. 2D Shapes(dsprites) Dataset
+<br>
+
+### 2D Shapes(dsprites) Dataset
 ```
 sh scripts/prepare_data.sh dsprites
 ```
-
-then data directory structure will be like below<br>
+the data directory structure should be like below<br>
 ```
 .
 └── data
