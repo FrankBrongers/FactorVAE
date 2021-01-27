@@ -8,7 +8,8 @@ python 3.8.5
 pytorch 1.7.0
 torchvision 0.8.1
 opencv 4.5.0
-tqdm
+matplotlib 3.3.3
+tqdm 4.56.0
 ```
 You can easily install al dependencies with anaconda using <br>
 
