@@ -111,12 +111,14 @@ class FactorVAE(nn.Module):
 
 
 def kaiming_init(m):
-    init.kaiming_normal_(m.weight)
-    if m.bias is not None:
-        m.bias.data.fill_(0)
+    if isinstance(m, (nn.Linear, nn.Conv2d)):
+        init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            m.bias.data.fill_(0)
 
 
 def normal_init(m):
-    init.normal_(m.weight, 0, 0.02)
-    if m.bias is not None:
-        m.bias.data.fill_(0)
+    if isinstance(m, (nn.Linear, nn.Conv2d)):
+        init.normal_(m.weight, 0, 0.02)
+        if m.bias is not None:
+            m.bias.data.fill_(0)
