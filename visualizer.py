@@ -64,15 +64,7 @@ def main(args):
 
     _, dataset = return_data(args)
 
-    factors = dataset.latents_classes
-    max_factors = dataset.latents_classes[-1]
-    n_factors = len(max_factors)
-
-    all_indices = np.array([])
-    for k_fixed in range(n_factors):
-        fixed_factor = np.random.randint(0, max_factors[k_fixed]+1)
-        sample_index = np.random.choice(np.where(factors[:, k_fixed] == fixed_factor)[0], size=1)
-        all_indices = np.append(all_indices, sample_index)
+    all_indices = np.random.choice(np.arange(0, len(dataset)), size=args.samples)
 
     input = dataset[all_indices][0].to(device)
     recon, mu, logvar, z = model(input)
@@ -94,7 +86,7 @@ def main(args):
     first_cam = ((torch.stack(first_cam, axis=1)).transpose(0,1)).unsqueeze(1)
     second_cam = ((torch.stack(second_cam, axis=1)).transpose(0,1)).unsqueeze(1)
 
-    input, recon, first_cam, second_cam = process_imgs(input.detach(), recon.detach(), first_cam.detach(), second_cam.detach(), n_factors)
+    input, recon, first_cam, second_cam = process_imgs(input.detach(), recon.detach(), first_cam.detach(), second_cam.detach(), args.samples)
 
     heatmap = add_heatmap(input, first_cam)
     heatmap2 = add_heatmap(input, second_cam)
@@ -119,6 +111,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--z_dim', default=32, type=int, help='dimension of the representation z, necessary for loading the model properly')
     parser.add_argument('--target_layer', type=str, default='0', help='target layer for the attention maps')
+    parser.add_argument('--samples', default=5, type=int, help='amount of samples from the dataset to create the maps for')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
     parser.add_argument('--dataset', default='dsprites', type=str, help='dataset name')
