@@ -96,7 +96,7 @@ def main(args):
     recon = np.uint8(np.asarray(recon, dtype=np.float)*255)
     grid = np.concatenate((input, heatmap, heatmap2))
 
-    cv2.imshow('Attention Maps', grid)
+    cv2.imshow('Attention Maps of ' + args.name, grid)
     cv2.waitKey(0)
 
 
