@@ -50,7 +50,12 @@ def return_data(args):
     if name.lower() == 'dsprites':
         root = os.path.join(dset_dir, 'dsprites-dataset/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
         data = np.load(root, encoding='latin1')
-        imgs = torch.from_numpy(data['imgs']).unsqueeze(1).float()
+        try:
+            # This is only for the visualizer
+            im_data = data['imgs'][np.random.choice(len(data['imgs']), size=args.sample_count)]
+        except:
+            im_data = data['imgs']
+        imgs = torch.from_numpy(im_data).unsqueeze(1).float()
         latents_classes = list(data['latents_classes'])
         train_kwargs = {'data_tensor':imgs, 'latents_classes':latents_classes}
         dset = CustomTensorDataset
