@@ -35,10 +35,10 @@ def process_imgs(input, recon, gcam, second_cam, n_factors):
     second_cam = second_cam - torch.min(second_cam)
     second_cam = second_cam / torch.max(second_cam)
 
-    input = make_grid(input, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
-    recon = make_grid(recon, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
-    gcam = make_grid(gcam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
-    second_cam = make_grid(second_cam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
+    input = make_grid(input, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
+    recon = make_grid(recon, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
+    gcam = make_grid(gcam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
+    second_cam = make_grid(second_cam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
 
     return input, recon, gcam, second_cam
 
