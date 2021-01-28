@@ -82,9 +82,9 @@ class Solver(object):
         if args.ckpt_load:
             self.load_checkpoint(args.ckpt_load)
 
-        # Vars
-        self.vars_dir = os.path.join(args.vars_dir, args.name+'_'+str(args.seed))
-        self.vars_save = args.vars_save
+        # Results
+        self.results_dir = os.path.join(args.results_dir, args.name+'_'+str(args.seed))
+        self.results_save = args.results_save
 
         self.outputs = {'vae_recon_loss': [], 'vae_kld': [], 'vae_tc_loss': [], 'D_tc_loss': [], 'ad_loss': [], 'dis_score': [], 'iteration': []}
 
@@ -136,7 +136,7 @@ class Solver(object):
                     self.pbar.write('[{}] vae_recon_loss:{:.3f} vae_kld:{:.3f} vae_tc_loss:{:.3f} ad_loss:{:.3f} D_tc_loss:{:.3f} dis_score:{:.3f}'.format(
                         self.global_iter, vae_recon_loss.item(), vae_kld.item(), vae_tc_loss.item(), vae_ad_loss.item(), D_tc_loss.item(), dis_score.item()))
 
-                    if self.vars_save:
+                    if self.results_save:
                         self.outputs['vae_recon_loss'].append(vae_recon_loss.item())
                         self.outputs['vae_kld'].append(vae_kld.item())
                         self.outputs['vae_tc_loss'].append(vae_tc_loss.item())
@@ -155,8 +155,8 @@ class Solver(object):
         self.pbar.write("[Training Finished]")
         self.pbar.close()
 
-        if self.vars_save:
-            save_args_outputs(self.vars_dir, self.args, self.outputs)
+        if self.results_save:
+            save_args_outputs(self.results_dir, self.args, self.outputs)
 
     def get_ad_loss(self, z):
         if not self.ad_loss:
