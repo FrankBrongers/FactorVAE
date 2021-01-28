@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import cv2
 from torchvision.utils import save_image, make_grid
-from model import FactorVAE1
+from model import FactorVAE
 
 from dataset import return_data
 from gradcam import GradCAM
@@ -56,7 +56,7 @@ def main(args):
     use_cuda = args.cuda and torch.cuda.is_available()
     device = 'cuda' if use_cuda else 'cpu'
 
-    model = FactorVAE1(args.z_dim).to(device)
+    model = FactorVAE(args.z_dim).to(device)
     model_found = load_checkpoint(model, args.dir, args.name, device)
 
     if not model_found:

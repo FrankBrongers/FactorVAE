@@ -51,7 +51,7 @@ class Discriminator(nn.Module):
 class FactorVAE(nn.Module):
     """Encoder and Decoder architecture for 2D Shapes data."""
     def __init__(self, z_dim=10):
-        super(FactorVAE1, self).__init__()
+        super(FactorVAE, self).__init__()
         self.z_dim = z_dim
         self.encode = nn.Sequential(
             nn.Conv2d(1, 32, 4, 2, 1),
