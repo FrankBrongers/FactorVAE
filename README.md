@@ -23,7 +23,7 @@ conda env create -f environment.yml
 ```
 sh scripts/prepare_data.sh dsprites
 ```
-the data directory structure should be like below<br>
+The data directory structure should be like below<br>
 ```
 .
 └── data
@@ -32,11 +32,12 @@ the data directory structure should be like below<br>
 ```
 
 ### Usage
-you can reproduce the models used as follows
+The results can be reproduced with jupyter notebook and running ```results.ipynb```<br>
+You can reproduce the models used as follows
 ```
 sh scripts/reproduce_models.sh
 ```
-or you can run your own experiments by setting parameters manually, run the following to see the possible options
+or you can run your own experiments using the default settings by setting those manually, run the following to see the possible options
 ```
 python main.py --help
 ```
