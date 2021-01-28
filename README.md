@@ -53,6 +53,6 @@ python plotter.py --names 'gamma40 lambda40_gamma40' --all_plots
 ```
 Again, use the ```--help``` flag to check all possibilities
 
-### Reference
+### References
 1. Disentangling by Factorising, Kim et al. (http://arxiv.org/abs/1802.05983)
 2. Towards Visually Explaining Variational Autoencoders, Liu et al. (https://arxiv.org/abs/1911.07389)
