@@ -16,6 +16,7 @@ class View(nn.Module):
 
 
 class Discriminator(nn.Module):
+    """Model necessary for the FactorVAE implementation"""
     def __init__(self, z_dim):
         super(Discriminator, self).__init__()
         self.z_dim = z_dim
@@ -49,7 +50,6 @@ class Discriminator(nn.Module):
 
 
 class FactorVAE(nn.Module):
-    """Encoder and Decoder architecture for 2D Shapes data."""
     def __init__(self, z_dim=10):
         super(FactorVAE, self).__init__()
         self.z_dim = z_dim
@@ -92,7 +92,7 @@ class FactorVAE(nn.Module):
             for m in self._modules[block]:
                 initializer(m)
 
-    def reparametrize(self, mu, logvar):
+    def reparameterize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
         eps = std.data.new(std.size()).normal_()
         return eps.mul(std).add_(mu)
@@ -101,7 +101,7 @@ class FactorVAE(nn.Module):
         stats = self.encode(x)
         mu = stats[:, :self.z_dim]
         logvar = stats[:, self.z_dim:]
-        z = self.reparametrize(mu, logvar)
+        z = self.reparameterize(mu, logvar)
 
         if no_dec:
             return z.squeeze()
@@ -111,22 +111,12 @@ class FactorVAE(nn.Module):
 
 
 def kaiming_init(m):
-    if isinstance(m, (nn.Linear, nn.Conv2d)):
-        init.kaiming_normal_(m.weight)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-    elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
-        m.weight.data.fill_(1)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
+    init.kaiming_normal_(m.weight)
+    if m.bias is not None:
+        m.bias.data.fill_(0)
 
 
 def normal_init(m):
-    if isinstance(m, (nn.Linear, nn.Conv2d)):
-        init.normal_(m.weight, 0, 0.02)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-    elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
-        m.weight.data.fill_(1)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
+    init.normal_(m.weight, 0, 0.02)
+    if m.bias is not None:
+        m.bias.data.fill_(0)
