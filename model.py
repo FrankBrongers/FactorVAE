@@ -48,7 +48,7 @@ class Discriminator(nn.Module):
         return self.net(z).squeeze()
 
 
-class FactorVAE1(nn.Module):
+class FactorVAE(nn.Module):
     """Encoder and Decoder architecture for 2D Shapes data."""
     def __init__(self, z_dim=10):
         super(FactorVAE1, self).__init__()
