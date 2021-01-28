@@ -32,7 +32,7 @@ The data directory structure should be like below<br>
 ```
 
 ### Usage
-The results can be reproduced with jupyter notebook and running ```results.ipynb```<br>
+The results can be reproduced by starting jupyter notebook and running ```results.ipynb```<br>
 You can reproduce the models used as follows
 ```
 sh scripts/reproduce_models.sh
