@@ -30,8 +30,13 @@ def main(args):
 
     # Generate plots against iteration
     for i, v in enumerate(variables):
+        if not args.all_plots:
+            break
         fig = plt.figure()
         for name in names:
+            if name not in data.keys():
+                continue
+
             outputs = [file['outputs'][v] for file in data[name]]
             iteration = data[name][0]['outputs']['iteration']
             mean = np.mean(outputs, axis=0)
@@ -40,7 +45,9 @@ def main(args):
             # Only the runs with the ad_loss flag will have a lambda value
             try:
                 assert data[name][0]['args']['ad_loss'] == True
-                label = r'$\gamma=$'+str(data[name][0]['args']['gamma']) + r', $\lambda=$'+str(data[name][0]['args']['lamb'])
+                label = r'$\gamma=$'+str(data[name][0]['args']['gamma']) + \
+                        r', $\lambda=$'+str(int(data[name][0]['args']['lamb'])) + \
+                        ', L'+str(data[name][0]['args']['target_layer'])
             except:
                 label = r'$\gamma=$'+str(data[name][0]['args']['gamma'])
 
@@ -57,12 +64,16 @@ def main(args):
 
     fig = plt.figure()
     for name in names:
+        if name not in data.keys():
+            print(name, 'not found.')
+            continue
+
         recon = np.mean([file['outputs']['vae_recon_loss'] for file in data[name]], axis=0)[-1]
         dis = np.mean([file['outputs']['dis_score'] for file in data[name]], axis=0)[-1]
 
         try:
+            # Get plotting specifics for AD-FactorVAE
             assert data[name][0]['args']['ad_loss'] == True
-            # label = r'$\gamma=$'+str(data[name][0]['args']['gamma']) + r', $\lambda=$'+str(data[name][0]['args']['lamb'])
             label = 'AD-FactorVAE'
             marker = 'o'
             color = 'red'
@@ -73,7 +84,7 @@ def main(args):
             scores.append(dis)
             annotations.append(annotation)
         except:
-            # label = r'$\gamma=$'+str(data[name][0]['args']['gamma'])
+            # Get plotting specifics for FactorVAE
             label = 'FactorVAE'
             marker = 'D'
             color = 'green'
@@ -115,6 +126,7 @@ if __name__ == "__main__":
     parser.add_argument('--dir', default='vars', type=str, help='name of the directory holding the results')
     parser.add_argument('--output_dir', default='results', type=str, help='name of the directory holding the results')
     parser.add_argument('--ad_loss', type=bool, const=True, default=False, nargs='?', help='add if the attention disentanglement loss should be used')
+    parser.add_argument('--all_plots', type=bool, const=True, default=False, nargs='?', help='add if scores and losses should be plotted against iterations')
 
     args = parser.parse_args()
 
