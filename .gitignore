@@ -1,8 +1,5 @@
 # Folders
 __pycache__/
-checkpoints/
-outputs/
-vars/
 data/
 
 # Filetypes

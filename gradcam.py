@@ -35,7 +35,7 @@ class GradCAM(PropBase):
             Hook call function that stores the backward pass gradients for every
             network module in a dictionary.
             """
-            self.outputs_backward[id(module)] = grad_out[0]
+            self.outputs_backward[id(module)] = grad_out
 
         def func_f(module, input, f_output):
             """
@@ -60,6 +60,7 @@ class GradCAM(PropBase):
         A = self.get_conv_outputs(self.outputs_forward, self.target_layer)
 
         b, n, w, h = A.shape
+        A_flat = A.view(b*n, w*h)
 
         M_list = torch.zeros([z.shape[1], b, self.image_size, self.image_size]).to(self.device)
 
@@ -72,9 +73,11 @@ class GradCAM(PropBase):
             self.grads = self.get_conv_outputs(self.outputs_backward, self.target_layer)
 
             gradients = self.grads[0].to(self.device)
-            a_k = torch.sum(gradients, dim=(1,2)) / (gradients.shape[1] * gradients.shape[2])
+            a_k = (torch.sum(gradients, dim=(2,3)) / (gradients.shape[2] * gradients.shape[3])).flatten()
 
-            M_i = F.relu(a_k*A).sum(dim=1, keepdim=True)
+            a_kA = torch.multiply(a_k, A_flat.T).T
+            a_kA = (a_kA).view((b, n, w, h))
+            M_i = F.relu(a_kA).sum(dim=1, keepdim=True)
             M_i = F.interpolate(M_i, (self.image_size, self.image_size),
                                     mode="bilinear", align_corners=True)
             M_i = M_i.squeeze(1)

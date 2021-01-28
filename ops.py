@@ -15,15 +15,6 @@ def ad_loss(M, b, pick2=True):
     denom = M.sum()
     return (2*num/denom).div(b)
 
-    # loss = 0
-    # for i in l:
-    #     for j in l:
-    #         if j != i:
-    #             combined = torch.cat((M[0].flatten(), M[1].flatten()))
-    #             loss += 2*torch.sum(torch.min(combined, dim=1))/torch.sum(combined)
-    #
-    # return loss
-
 
 def kl_divergence(mu, logvar, dim_wise=False):
     if dim_wise:
