@@ -66,7 +66,9 @@ def main(args):
             label = 'AD-FactorVAE'
             marker = 'o'
             color = 'red'
-            annotation = r'$\lambda$'+str(int(data[name][0]['args']['lamb']))+'L'+str(data[name][0]['args']['target_layer'])
+            annotation = r'$\lambda$'+str(int(data[name][0]['args']['lamb']))
+            if int(data[name][0]['args']['target_layer']) != 0:
+                annotation += 'L'+str(data[name][0]['args']['target_layer'])
             recons.append(recon)
             scores.append(dis)
             annotations.append(annotation)
