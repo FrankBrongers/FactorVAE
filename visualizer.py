@@ -25,22 +25,23 @@ def load_checkpoint(model, ckpt_dir, ckptname, device, verbose=True):
         return False
 
 
-def process_imgs(input, recon, gcam, second_cam, n_factors):
-    input = input - torch.min(input)
-    input = input / torch.max(input)
-    recon = recon - torch.min(recon)
-    recon = recon / torch.max(recon)
-    gcam = gcam - torch.min(gcam)
-    gcam = gcam / torch.max(gcam)
-    second_cam = second_cam - torch.min(second_cam)
-    second_cam = second_cam / torch.max(second_cam)
+def normalize_tensor(t):
+    t = t - torch.min(t)
+    t = t / torch.max(t)
+
+    return t
+
+
+def process_imgs(input, recon, first_cam, second_cam, n_factors):
+    input = normalize_tensor(input)
+    recon = normalize_tensor(recon)
 
     input = make_grid(input, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
     recon = make_grid(recon, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
-    gcam = make_grid(gcam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
+    first_cam = make_grid(first_cam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
     second_cam = make_grid(second_cam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().cpu().numpy()
 
-    return input, recon, gcam, second_cam
+    return input, recon, first_cam, second_cam
 
 
 def add_heatmap(input, gcam):
@@ -78,10 +79,10 @@ def main(args):
     for map in maps:
         response = map.flatten(1).sum(1)
         argmax = torch.argmax(response).item()
-        first_cam.append(map[argmax])
+        first_cam.append(normalize_tensor(map[argmax]))
 
         response = torch.cat((response[:argmax], response[argmax+1:]))
-        second_cam.append(map[torch.argmax(response).item()])
+        second_cam.append(normalize_tensor(map[torch.argmax(response).item()]))
 
     first_cam = ((torch.stack(first_cam, axis=1)).transpose(0,1)).unsqueeze(1)
     second_cam = ((torch.stack(second_cam, axis=1)).transpose(0,1)).unsqueeze(1)
@@ -95,7 +96,7 @@ def main(args):
     recon = np.uint8(np.asarray(recon, dtype=np.float)*255)
     grid = np.concatenate((input, heatmap, heatmap2))
 
-    cv2.imshow('filename', grid)
+    cv2.imshow('Attention Maps', grid)
     cv2.waitKey(0)
 
 
