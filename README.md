@@ -31,23 +31,26 @@ the data directory structure should be like below<br>
 ```
 
 ### Usage
-you can reproduce results below as follows
+you can reproduce the models used as follows
 ```
-e.g.
-sh scripts/run_celeba.sh $RUN_NAME
-sh scripts/run_dsprites_gamma6p4.sh $RUN_NAME
-sh scripts/run_dsprites_gamma10.sh $RUN_NAME
-sh scripts/run_3dchairs.sh $RUN_NAME
+sh scripts/reproduce_models.sh
 ```
-or you can run your own experiments by setting parameters manually
+or you can run your own experiments by setting parameters manually, run the following to see the possible options
 ```
-e.g.
-python main.py --name run_celeba --dataset celeba --gamma 6.4 --lr_VAE 1e-4 --lr_D 5e-5 --z_dim 10 ...
+python main.py --help
 ```
+
+### Visualization
+You can create visualizations of the attention maps, for example
+```
+python visualizer.py  --name FactorVAE --target_layer 0
+```
+And plot the results, for example
+```
+python plotter.py --names 'gamma40 lambda40_gamma40' --all_plots
+```
+Again, use the ```--help``` flag to check all possibilities
 
 ### Reference
 1. Disentangling by Factorising, Kim et al.([http://arxiv.org/abs/1802.05983])
-
-
-[http://arxiv.org/abs/1802.05983]: http://arxiv.org/abs/1802.05983
-[download]: http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+2. Towards Visually Explaining Variational Autoencoders, Liu et al.([https://arxiv.org/abs/1911.07389])
