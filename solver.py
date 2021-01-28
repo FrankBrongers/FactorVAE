@@ -79,7 +79,8 @@ class Solver(object):
         # Checkpoint
         self.ckpt_dir = os.path.join(args.ckpt_dir, args.name+'_'+str(args.seed))
         self.ckpt_save_iter = args.ckpt_save_iter
-        mkdirs(self.ckpt_dir)
+        if self.max_iter > args.ckpt_save_iter:
+            mkdirs(self.ckpt_dir)
         if args.ckpt_load:
             self.load_checkpoint(args.ckpt_load)
 
