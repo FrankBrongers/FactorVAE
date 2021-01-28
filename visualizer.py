@@ -28,19 +28,22 @@ def load_checkpoint(model, ckpt_dir, ckptname, device, verbose=True):
         return False
 
 
-def process_imgs(input, recon, gcam, n_factors):
+def process_imgs(input, recon, gcam, second_cam, n_factors):
     input = input - torch.min(input)
     input = input / torch.max(input)
     recon = recon - torch.min(recon)
     recon = recon / torch.max(recon)
     gcam = gcam - torch.min(gcam)
     gcam = gcam / torch.max(gcam)
+    second_cam = second_cam - torch.min(second_cam)
+    second_cam = second_cam / torch.max(second_cam)
 
     input = make_grid(input, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
     recon = make_grid(recon, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
     gcam = make_grid(gcam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
+    second_cam = make_grid(second_cam, nrow=n_factors, normalize=False).transpose(0, 2).transpose(0, 1).detach().numpy()
 
-    return input, recon, gcam
+    return input, recon, gcam, second_cam
 
 def add_heatmap(input, gcam):
     gcam = cv2.applyColorMap(np.uint8(255 * gcam), cv2.COLORMAP_JET)
@@ -80,15 +83,32 @@ def main(args):
     x, x_recon = x.repeat(1, 3, 1, 1), x_recon.repeat(1, 3, 1, 1)
 
     cam = gcam.generate(z)
-    response = cam.flatten(1).sum(1)
-    picked_cam = cam[torch.argmax(response).item()].unsqueeze(1)
+    # response = cam.flatten(1).sum(1)
+    # picked_cam = cam[torch.argmax(response).item()].unsqueeze(1)
+    # cam = torch.cat((cam[:torch.argmax(response).item()], cam[torch.argmax(response).item()+1:]))
+    # second_cam = cam[torch.argmax(response).item()].unsqueeze(1)
 
-    input, recon, gcam = process_imgs(x.detach(), x_recon.detach(), picked_cam.detach(), n_factors)
+    cam = cam.transpose(0,1)
 
-    heatmap = add_heatmap(input, gcam)
+    first_cam, second_cam = [], []
+
+    for i in cam:
+        response = i.flatten(1).sum(1)
+        argmax = torch.argmax(response).item()
+        first_cam.append(cam[argmax])
+        ncam = torch.cat((cam[:argmax], cam[argmax+1:]))
+        second_cam.append(ncam[torch.argmax(response).item()])
+
+    first_cam = (torch.cat(first_cam)).unsqueeze(1)
+    second_cam = (torch.cat(second_cam)).unsqueeze(1)
+
+    input, recon, picked_cam, second_cam = process_imgs(x.detach(), x_recon.detach(), picked_cam.detach(), second_cam.detach(), n_factors)
+
+    heatmap = add_heatmap(input, picked_cam)
+    heatmap2 = add_heatmap(input, second_cam)
 
     input = np.uint8(np.asarray(input, dtype=np.float)*255)
-    grid = np.concatenate((input, heatmap))
+    grid = np.concatenate((input, heatmap, heatmap2))
 
     cv2.imshow('filename', grid)
     cv2.waitKey(0)
