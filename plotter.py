@@ -124,7 +124,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--names', default='main', type=str, help='names of the experiments to be plotted')
     parser.add_argument('--dir', default='vars', type=str, help='name of the directory holding the results')
-    parser.add_argument('--output_dir', default='results', type=str, help='name of the directory holding the results')
     parser.add_argument('--ad_loss', type=bool, const=True, default=False, nargs='?', help='add if the attention disentanglement loss should be used')
     parser.add_argument('--all_plots', type=bool, const=True, default=False, nargs='?', help='add if scores and losses should be plotted against iterations')
 
