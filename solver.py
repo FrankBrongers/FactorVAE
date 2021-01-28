@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from utils import mkdirs, save_args_outputs
 from ops import recon_loss, ad_loss, kl_divergence, permute_dims
-from model import FactorVAE1, Discriminator
+from model import FactorVAE, Discriminator
 from dataset import return_data
 from disentanglement import disentanglement_score
 from gradcam import GradCAM
@@ -30,6 +30,7 @@ class Solver(object):
         self.pbar = tqdm(total=self.max_iter)
 
         # Data
+        assert args.dataset == 'dsprites', 'Only dSprites is implemented'
         self.dset_dir = args.dset_dir
         self.dataset = args.dataset
         self.batch_size = args.batch_size
@@ -53,13 +54,10 @@ class Solver(object):
         self.dis_score = args.dis_score
         self.dis_batch_size = args.dis_batch_size
 
-        if args.dataset == 'dsprites':
-            self.VAE = FactorVAE1(self.z_dim).to(self.device)
-            self.nc = 1
-        else:
-            self.VAE = FactorVAE2(self.z_dim).to(self.device)
-            self.nc = 3
-            self.dis_score = False
+        # Models and optimizers
+        self.VAE = FactorVAE(self.z_dim).to(self.device)
+        self.nc = 1
+
         self.optim_VAE = optim.Adam(self.VAE.parameters(), lr=self.lr_VAE,
                                     betas=(self.beta1_VAE, self.beta2_VAE))
 
