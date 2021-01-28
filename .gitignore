@@ -1,12 +1,6 @@
 # Folders
 __pycache__/
-
-checkpoints/
 data/
-outputs/
-results/
-vars/
-visualizations/
 
 # Filetypes
 *.pyc
