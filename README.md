@@ -1,5 +1,5 @@
 # FactorVAE
-Pytorch implementation of FactorVAE proposed in Disentangling by Factorising, Kim et al.([http://arxiv.org/abs/1802.05983])
+Pytorch implementation of AD-FactorVAE proposed in Towards Visually Explaining Variational Autoencoders (https://arxiv.org/abs/1911.07389)
 <br>
 
 ### Dependencies
@@ -52,5 +52,5 @@ python plotter.py --names 'gamma40 lambda40_gamma40' --all_plots
 Again, use the ```--help``` flag to check all possibilities
 
 ### Reference
-1. Disentangling by Factorising, Kim et al.([http://arxiv.org/abs/1802.05983])
-2. Towards Visually Explaining Variational Autoencoders, Liu et al.([https://arxiv.org/abs/1911.07389])
+1. Disentangling by Factorising, Kim et al. (http://arxiv.org/abs/1802.05983)
+2. Towards Visually Explaining Variational Autoencoders, Liu et al. (https://arxiv.org/abs/1911.07389)
