@@ -8,10 +8,6 @@ from model import FactorVAE1
 from dataset import return_data
 from gradcam import GradCAM
 
-
-np.random.seed(0)
-
-
 def load_checkpoint(model, ckpt_dir, ckptname, device, verbose=True):
     filepath = os.path.join(ckpt_dir, ckptname)
     if os.path.isfile(filepath):
@@ -54,6 +50,7 @@ def add_heatmap(input, gcam):
 
 
 def main(args):
+    np.random.seed(args.seed)
     use_cuda = args.cuda and torch.cuda.is_available()
     device = 'cuda' if use_cuda else 'cpu'
 
@@ -77,37 +74,33 @@ def main(args):
         sample_index = np.random.choice(np.where(factors[:, k_fixed] == fixed_factor)[0], size=1)
         all_indices = np.append(all_indices, sample_index)
 
-    x = dataset[all_indices][0].to(device)
-    x_recon, mu, logvar, z = model(x)
+    input = dataset[all_indices][0].to(device)
+    recon, mu, logvar, z = model(input)
 
-    x, x_recon = x.repeat(1, 3, 1, 1), x_recon.repeat(1, 3, 1, 1)
+    input, recon = input.repeat(1, 3, 1, 1), recon.repeat(1, 3, 1, 1)
 
-    cam = gcam.generate(z)
-    # response = cam.flatten(1).sum(1)
-    # picked_cam = cam[torch.argmax(response).item()].unsqueeze(1)
-    # cam = torch.cat((cam[:torch.argmax(response).item()], cam[torch.argmax(response).item()+1:]))
-    # second_cam = cam[torch.argmax(response).item()].unsqueeze(1)
-
-    cam = cam.transpose(0,1)
+    maps = gcam.generate(z)
+    maps = maps.transpose(0,1)
 
     first_cam, second_cam = [], []
-
-    for i in cam:
-        response = i.flatten(1).sum(1)
+    for map in maps:
+        response = map.flatten(1).sum(1)
         argmax = torch.argmax(response).item()
-        first_cam.append(cam[argmax])
-        ncam = torch.cat((cam[:argmax], cam[argmax+1:]))
-        second_cam.append(ncam[torch.argmax(response).item()])
+        first_cam.append(map[argmax])
 
-    first_cam = (torch.cat(first_cam)).unsqueeze(1)
-    second_cam = (torch.cat(second_cam)).unsqueeze(1)
+        response = torch.cat((response[:argmax], response[argmax+1:]))
+        second_cam.append(map[torch.argmax(response).item()])
 
-    input, recon, picked_cam, second_cam = process_imgs(x.detach(), x_recon.detach(), picked_cam.detach(), second_cam.detach(), n_factors)
+    first_cam = ((torch.stack(first_cam, axis=1)).transpose(0,1)).unsqueeze(1)
+    second_cam = ((torch.stack(second_cam, axis=1)).transpose(0,1)).unsqueeze(1)
 
-    heatmap = add_heatmap(input, picked_cam)
+    input, recon, first_cam, second_cam = process_imgs(input.detach(), recon.detach(), first_cam.detach(), second_cam.detach(), n_factors)
+
+    heatmap = add_heatmap(input, first_cam)
     heatmap2 = add_heatmap(input, second_cam)
 
     input = np.uint8(np.asarray(input, dtype=np.float)*255)
+    recon = np.uint8(np.asarray(recon, dtype=np.float)*255)
     grid = np.concatenate((input, heatmap, heatmap2))
 
     cv2.imshow('filename', grid)
@@ -120,8 +113,11 @@ if __name__ == "__main__":
     parser.add_argument('--name', default='main', type=str, help='name of the model to be visualized')
     parser.add_argument('--dir', default='checkpoints', type=str, help='name of the directory holding the models weights')
     parser.add_argument('--output_dir', default='visualizations', type=str, help='name of the directory holding the visualizations')
+
+    parser.add_argument('--seed', default=0, type=int, help='the seed')
     parser.add_argument('--cuda', type=bool, const=True, default=False, nargs='?', help='add if the gpu should be used')
-    parser.add_argument('--z_dim', default=32, type=int, help='dimension of the representation z')
+
+    parser.add_argument('--z_dim', default=32, type=int, help='dimension of the representation z, necessary for loading the model properly')
     parser.add_argument('--target_layer', type=str, default='0', help='target layer for the attention maps')
 
     parser.add_argument('--dset_dir', default='data', type=str, help='dataset directory')
