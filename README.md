@@ -1,4 +1,4 @@
-# FactorVAE
+# AD-FactorVAE
 Pytorch implementation of AD-FactorVAE proposed in Towards Visually Explaining Variational Autoencoders (https://arxiv.org/abs/1911.07389).<br>
 FactorVAE implementation based on https://github.com/1Konny/FactorVAE.
 <br>
