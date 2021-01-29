@@ -91,7 +91,7 @@ def main(args):
 
         plt.scatter(recon, dis, label=label, c=color, marker=marker, edgecolors='black')
 
-    plt.axis([0, 150, .6, 1.00])
+    plt.axis([0, 150, .75, 1.00])
     plt.xticks([0, 50, 100, 150])
 
     plt.xlabel('reconstrucion error')
@@ -103,7 +103,7 @@ def main(args):
     ax.set_facecolor('lightblue')
 
     for i, annotation in enumerate(annotations):
-        ax.annotate(annotation, (recons[i], scores[i]))
+        ax.annotate(annotation, (recons[i]+1.5, scores[i]+0.003))
 
     handles, labels = ax.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))

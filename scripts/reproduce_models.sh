@@ -15,7 +15,7 @@ python main.py --dataset dsprites --ckpt_save_iter 300000 --max_iter 300000 \
 
 
 printf "\nTraining AD-FactorVAEs\n"
-printf "\nlamda=1\n"
+printf "\nlambda=1\n"
 
 python main.py --dataset dsprites --ckpt_save_iter 300002 --max_iter 300000 \
        --print_iter 10000 --gamma 40 --name lambda1_gamma40 \
@@ -30,7 +30,7 @@ python main.py --dataset dsprites --ckpt_save_iter 300000 --max_iter 300000 \
        --ad_loss --dis_score --z_dim 32 --seed 2
 
 
-printf "\nlamda=1, convlayer=3\n"
+printf "\nlambda=1, convlayer=3\n"
 
 python main.py --dataset dsprites --ckpt_save_iter 300002 --max_iter 300000 \
       --print_iter 10000 --gamma 40 --name conv3_lambda1_gamma40 \
@@ -45,7 +45,7 @@ python main.py --dataset dsprites --ckpt_save_iter 300000 --max_iter 300000 \
       --ad_loss --dis_score --z_dim 32 --seed 2 --target_layer 4
 
 
-printf "\nlamda=20\n"
+printf "\nlambda=20\n"
 
 python main.py --dataset dsprites --ckpt_save_iter 300002 --max_iter 300000 \
        --print_iter 10000 --gamma 40 --name lambda20_gamma40 \
@@ -60,7 +60,7 @@ python main.py --dataset dsprites --ckpt_save_iter 300000 --max_iter 300000 \
        --ad_loss --dis_score --z_dim 32 --seed 2 --lamb 20
 
 
-printf "\nlamda=40\n"
+printf "\nlambda=40\n"
 
 python main.py --dataset dsprites --ckpt_save_iter 300002 --max_iter 300000 \
        --print_iter 10000 --gamma 40 --name lambda40_gamma40 \
@@ -75,7 +75,7 @@ python main.py --dataset dsprites --ckpt_save_iter 300000 --max_iter 300000 \
        --ad_loss --dis_score --z_dim 32 --seed 2 --lamb 40
 
 
-printf "\nlamda=80\n"
+printf "\nlambda=80\n"
 
 python main.py --dataset dsprites --ckpt_save_iter 300002 --max_iter 300000 \
        --print_iter 10000 --gamma 40 --name lambda80_gamma40 \
