@@ -37,7 +37,7 @@ You can reproduce the models used as follows
 ```
 sh scripts/reproduce_models.sh
 ```
-or you can run your own experiments using the default settings by setting those manually, run the following to see the possible options
+or you can run your own experiments using the default settings or by setting those manually, run the following to see the possible options
 ```
 python main.py --help
 ```
